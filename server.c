@@ -1,15 +1,28 @@
+/* ************************************************************************** */
+/*                                                                            */
+/*                                                        :::      ::::::::   */
+/*   server.c                                           :+:      :+:    :+:   */
+/*                                                    +:+ +:+         +:+     */
+/*   By: soel-bou <soel-bou@student.42.fr>          +#+  +:+       +#+        */
+/*                                                +#+#+#+#+#+   +#+           */
+/*   Created: 2024/01/10 17:10:39 by soel-bou          #+#    #+#             */
+/*   Updated: 2024/01/10 19:51:45 by soel-bou         ###   ########.fr       */
+/*                                                                            */
+/* ************************************************************************** */
+
+
 #include <signal.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
 
-
 void    reset(int pid, unsigned char *c, int *bits)
 {
-    if(*c == '\n')
+    if (*c == '\n')
     {
         usleep(100);
-        kill(pid, SIGUSR1);
+        if (kill(pid, SIGUSR1) == -1)
+            exit(EXIT_FAILURE);
     }
     write(1, c, 1);
     *bits = 7;
@@ -19,10 +32,11 @@ void    reset(int pid, unsigned char *c, int *bits)
 void    handler(int sig, siginfo_t *info, void *context)
 {
     static unsigned char c;
-    static int bits = 7;
-    static int   pid;
+    static int          bits;
+    static int          pid;
 
-    if(pid != info->si_pid)
+    (void)context;
+    if (pid != info->si_pid)
     {
         bits = 7;
         c = 0;
@@ -34,19 +48,10 @@ void    handler(int sig, siginfo_t *info, void *context)
         c = (c << 1) | 1;
     bits--;
     if (bits < 0)
-    {
-        if(c == '\n')
-        {
-            usleep(100);
-            kill(info->si_pid, SIGUSR1);
-        }
-        write(1, &c, 1);
-        bits = 7;
-        c = 0;
-    }
+        reset(info->si_pid, &c, &bits);
 }
 
-int main()
+int main(void)
 {
     printf("Server PID: %d\n", getpid());
     struct sigaction	sa;

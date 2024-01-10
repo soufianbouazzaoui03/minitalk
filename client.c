@@ -1,3 +1,15 @@
+/* ************************************************************************** */
+/*                                                                            */
+/*                                                        :::      ::::::::   */
+/*   client.c                                           :+:      :+:    :+:   */
+/*                                                    +:+ +:+         +:+     */
+/*   By: soel-bou <soel-bou@student.42.fr>          +#+  +:+       +#+        */
+/*                                                +#+#+#+#+#+   +#+           */
+/*   Created: 2024/01/10 17:10:49 by soel-bou          #+#    #+#             */
+/*   Updated: 2024/01/10 19:53:15 by soel-bou         ###   ########.fr       */
+/*                                                                            */
+/* ************************************************************************** */
+
 #include <signal.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -6,43 +18,47 @@
 void    sendchar(char c, int pid)
 {
     int n;
-    int k = 1;
+    int k;
 
     n = 7;
     while(n >= 0)
     {
-        if(((c >> n) & 1) == 0)
+        if (((c >> n) & 1) == 0)
             k = kill(pid, SIGUSR1);
-        else if(((c >> n) & 1) == 1)
+        else if (((c >> n) & 1) == 1)
             k = kill(pid, SIGUSR2);
         if (k < 0)
             exit(EXIT_FAILURE);
         n--;
-        usleep(100);
+        usleep(1337);
     }
 }
 
 void    sendstring(char *s, int pid)
 {
-    while(*s)
+    while (*s)
         sendchar(*s++, pid);
 }
 
-void    handler(int seg)
+void    handler(int seg, siginfo_t *info, void *context)
 {
-    if(seg == SIGUSR1)
-    printf("Message Sent successfully\n");
+    (void)context;
+    if (seg == SIGUSR1)
+        printf("Message Sent successfully to Server(%d)\n", info->si_pid);
 }
 int main(int argc, char *argv[])
 {
     int pid;
-    if(argc == 3)
+    if (argc == 3)
     {
+        struct sigaction	sa;
+	    sa.sa_sigaction = handler;
+        sa.sa_flags = SA_SIGINFO;
+        sigaction(SIGUSR1, &sa, NULL);
         pid = atoi(argv[1]);
         sendstring(argv[2], pid);
         sendchar('\n', pid);
-        signal(SIGUSR1, handler);
-        while(1)
+        while (1)
             sleep(1);
     }
     else
