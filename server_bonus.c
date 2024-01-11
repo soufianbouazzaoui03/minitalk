@@ -1,21 +1,29 @@
 /* ************************************************************************** */
 /*                                                                            */
 /*                                                        :::      ::::::::   */
-/*   server.c                                           :+:      :+:    :+:   */
+/*   server_bonus.c                                     :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
 /*   By: soel-bou <soel-bou@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
-/*   Created: 2024/01/10 21:11:01 by soel-bou          #+#    #+#             */
-/*   Updated: 2024/01/12 00:29:42 by soel-bou         ###   ########.fr       */
+/*   Created: 2024/01/10 17:10:39 by soel-bou          #+#    #+#             */
+/*   Updated: 2024/01/12 00:30:05 by soel-bou         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
+
 #include <signal.h>
+#include <stdlib.h>
 #include <unistd.h>
 #include "./printf/ft_printf.h"
 
-void    reset(unsigned char *c, int *bits)
+void    reset(int pid, unsigned char *c, int *bits)
 {
+    if (*c == '\n')
+    {
+        usleep(100);
+        if (kill(pid, SIGUSR1) == -1)
+            exit(EXIT_FAILURE);
+    }
     write(1, c, 1);
     *bits = 7;
     *c = 0;
@@ -40,7 +48,7 @@ void    handler(int sig, siginfo_t *info, void *context)
         c = (c << 1) | 1;
     bits--;
     if (bits < 0)
-        reset( &c, &bits);
+        reset(info->si_pid, &c, &bits);
 }
 
 int main(void)
